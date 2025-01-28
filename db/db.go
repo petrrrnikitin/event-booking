@@ -29,7 +29,7 @@ func createTables() {
 	    description TEXT NOT NULL,
 	    location TEXT NOT NULL,
 	    dateTime DATETIME NOT NULL,
-	    creatorId integer NOT NULL
+	    creator_id integer NOT NULL
 	)
 `
 	_, err := DB.Exec(createEventsTable)
