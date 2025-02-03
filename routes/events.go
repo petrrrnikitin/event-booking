@@ -52,19 +52,10 @@ func getEvents(context *gin.Context) {
 }
 
 func updateEvent(context *gin.Context) {
-	id, err := strconv.ParseInt(context.Param("id"), 10, 64)
-	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"message": fmt.Sprintf("Invalid id: %d", id)})
-		return
-	}
+	value, _ := context.Get("event")
+	event := value.(*models.Event)
+
 	userId := context.GetInt64("userId")
-	event, err := models.GetEventById(id)
-	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Could not fetch event",
-		})
-		return
-	}
 
 	if event.CreatorID != userId {
 		context.JSON(http.StatusForbidden, gin.H{"message": "You are not the owner of this event"})
@@ -72,13 +63,13 @@ func updateEvent(context *gin.Context) {
 	}
 
 	var updatedEvent models.Event
-	err = context.ShouldBindJSON(&updatedEvent)
+	err := context.ShouldBindJSON(&updatedEvent)
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"message": "Incorrect data, some fields are missing", "error": err.Error()})
 		return
 	}
 
-	updatedEvent.ID = id
+	updatedEvent.ID = event.ID
 	err = updatedEvent.Update()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to update event", "error": err.Error()})
@@ -89,27 +80,17 @@ func updateEvent(context *gin.Context) {
 }
 
 func deleteEvent(context *gin.Context) {
-	id, err := strconv.ParseInt(context.Param("id"), 10, 64)
-	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"message": fmt.Sprintf("Invalid id: %d", id)})
-		return
-	}
+	value, _ := context.Get("event")
+	event := value.(*models.Event)
 
 	userId := context.GetInt64("userId")
-	event, err := models.GetEventById(id)
-	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Could not fetch event",
-		})
-		return
-	}
 
 	if event.CreatorID != userId {
 		context.JSON(http.StatusForbidden, gin.H{"message": "You are not the owner of this event"})
 		return
 	}
 
-	err = event.Delete()
+	err := event.Delete()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to delete event"})
 	}
