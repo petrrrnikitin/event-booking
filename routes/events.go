@@ -57,11 +57,17 @@ func updateEvent(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{"message": fmt.Sprintf("Invalid id: %d", id)})
 		return
 	}
-	_, err = models.GetEventById(id)
+	userId := context.GetInt64("userId")
+	event, err := models.GetEventById(id)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{
 			"message": "Could not fetch event",
 		})
+		return
+	}
+
+	if event.CreatorID != userId {
+		context.JSON(http.StatusForbidden, gin.H{"message": "You are not the owner of this event"})
 		return
 	}
 
@@ -88,6 +94,8 @@ func deleteEvent(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{"message": fmt.Sprintf("Invalid id: %d", id)})
 		return
 	}
+
+	userId := context.GetInt64("userId")
 	event, err := models.GetEventById(id)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{
@@ -95,6 +103,12 @@ func deleteEvent(context *gin.Context) {
 		})
 		return
 	}
+
+	if event.CreatorID != userId {
+		context.JSON(http.StatusForbidden, gin.H{"message": "You are not the owner of this event"})
+		return
+	}
+
 	err = event.Delete()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to delete event"})
